@@ -191,21 +191,22 @@ class QShamsiCalendarWidget(QWidget):
     def day_label_clicked(self):
         label = self.sender()
         day_selected = label.dayText
-        year = self.years[self.year_combo.currentIndex()]
-        month = self.month_combo.currentIndex() + 1
-        current_selected_date = jdatetime.date(year, month, day_selected)
-        for i in range(6):
-            for j in list(range(7)):
-                if self.weeks[i][j].dayText == day_selected:
-                    self.weeks[i][j].selected = not self.weeks[i][j].selected
-                else:
-                    self.weeks[i][j].selected = False
-                self.weeks[i][j].default_style()
-        if self.selected_date == current_selected_date:
-            self.selected_date = None
-        else:
-            self.selected_date = current_selected_date
-            self.sel_date_changed.emit()    
+        if day_selected != -1:
+            year = self.years[self.year_combo.currentIndex()]
+            month = self.month_combo.currentIndex() + 1
+            current_selected_date = jdatetime.date(year, month, day_selected)
+            for i in range(6):
+                for j in list(range(7)):
+                    if self.weeks[i][j].dayText == day_selected:
+                        self.weeks[i][j].selected = not self.weeks[i][j].selected
+                    else:
+                        self.weeks[i][j].selected = False
+                    self.weeks[i][j].default_style()
+            if self.selected_date == current_selected_date:
+                self.selected_date = None
+            else:
+                self.selected_date = current_selected_date
+                self.sel_date_changed.emit()    
     
     def next_month_btn_clicked(self, event):
         month_index = self.month_combo.currentIndex()
