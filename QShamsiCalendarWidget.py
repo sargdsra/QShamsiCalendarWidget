@@ -11,18 +11,29 @@ class DayLabel(QLabel):
         QLabel.__init__(self, *args, **kwargs)
         self.selected = False
         self.current_date_style = False
+        self.isfriday = False
         self.default_style()        
         
     
     def default_style(self):
-        if self.current_date_style and self.selected:
-            self.setStyleSheet("background-color: yellow; border: 1px solid red")
-        elif self.current_date_style:
-            self.setStyleSheet("background-color: yellow; border: 1px solid white")
-        elif self.selected:
-            self.setStyleSheet("background-color: cyan; border: 1px solid red")
+        if self.isfriday:
+            if self.current_date_style and self.selected:
+                self.setStyleSheet("background-color: yellow; border: 1px solid red; color: red")
+            elif self.current_date_style:
+                self.setStyleSheet("background-color: yellow; border: 1px solid white; color: red")
+            elif self.selected:
+                self.setStyleSheet("background-color: cyan; border: 1px solid red; color: red")
+            else:
+                self.setStyleSheet("background-color: cyan; border: 1px solid white; color: red")
         else:
-            self.setStyleSheet("background-color: cyan; border: 1px solid white")
+            if self.current_date_style and self.selected:
+                self.setStyleSheet("background-color: yellow; border: 1px solid red; color: black")
+            elif self.current_date_style:
+                self.setStyleSheet("background-color: yellow; border: 1px solid white; color: black")
+            elif self.selected:
+                self.setStyleSheet("background-color: cyan; border: 1px solid red; color: black")
+            else:
+                self.setStyleSheet("background-color: cyan; border: 1px solid white; color: black")
 
     
     def setDayText(self, text):
@@ -34,10 +45,16 @@ class DayLabel(QLabel):
 
 
     def enterEvent(self, event):
-        if self.current_date_style:
-           self.setStyleSheet("background-color: yellow; border: 1px solid black") 
+        if self.isfriday:
+            if self.current_date_style:
+                self.setStyleSheet("background-color: yellow; border: 1px solid black; color: red") 
+            else:
+                self.setStyleSheet("background-color: cyan; border: 1px solid black; color: red")
         else:
-            self.setStyleSheet("background-color: cyan; border: 1px solid black")
+            if self.current_date_style:
+                self.setStyleSheet("background-color: yellow; border: 1px solid black; color: black") 
+            else:
+                self.setStyleSheet("background-color: cyan; border: 1px solid black; color: black")
 
 
     def leaveEvent(self, event):
@@ -74,7 +91,7 @@ class QShamsiCalendarWidget(QWidget):
             grid.addWidget(label, *pos)
 
         self.weeks = []
-        for i in range(1, 6):
+        for i in range(1, 7):
             temp_week = list()
             for j in list(range(7))[::-1]:
                 pos = (i, j)
@@ -118,31 +135,32 @@ class QShamsiCalendarWidget(QWidget):
         self.setLayout(main_layout)
     
     def fix_days(self):
-        for i in range(5):
+        for i in range(6):
             for j in list(range(7)):
                 self.weeks[i][j].setDayText(-1)
                 self.weeks[i][j].selected = False
                 self.weeks[i][j].current_date_style = False
+                self.weeks[i][j].isfriday = False
                 self.weeks[i][j].default_style()       
         year = self.years[self.year_combo.currentIndex()]
         month = self.month_combo.currentIndex() + 1
         first_day = jdatetime.date(year, month, 1)
         day_thr = -1
         if first_day.isleap():
+            if 7 <= month <= 12:
+                day_thr = 30
+            else:
+                day_thr = 31
+        else:
             if month == 12:
                 day_thr = 29
             elif 7 <= month <= 11:
                 day_thr = 30
             else:
                 day_thr = 31
-        else:
-            if 7 <= month <= 12:
-                day_thr = 30
-            else:
-                day_thr = 31
         first_day_week_id = first_day.weekday()
         day_co = 0
-        for i in range(5):
+        for i in range(6):
             if day_co == day_thr:
                 break
             if i == 0:
@@ -150,8 +168,10 @@ class QShamsiCalendarWidget(QWidget):
                     self.weeks[i][j].setDayText(day_co + 1)
                     if self.current_date == jdatetime.date(year, month, day_co + 1):
                         self.weeks[i][j].current_date_style = True
-                    elif self.selected_date == jdatetime.date(year, month, day_co + 1):
+                    if self.selected_date == jdatetime.date(year, month, day_co + 1):
                         self.weeks[i][j].selected = True
+                    if jdatetime.date(year, month, day_co + 1).weekday() == 6:
+                        self.weeks[i][j].isfriday = True
                     self.weeks[i][j].default_style()
                     day_co += 1
             else:
@@ -159,8 +179,10 @@ class QShamsiCalendarWidget(QWidget):
                     self.weeks[i][j].setDayText(day_co + 1)
                     if self.current_date == jdatetime.date(year, month, day_co + 1):
                         self.weeks[i][j].current_date_style = True
-                    elif self.selected_date == jdatetime.date(year, month, day_co + 1):
+                    if self.selected_date == jdatetime.date(year, month, day_co + 1):
                         self.weeks[i][j].selected = True
+                    if jdatetime.date(year, month, day_co + 1).weekday() == 6:
+                        self.weeks[i][j].isfriday = True
                     self.weeks[i][j].default_style()
                     day_co += 1
                     if day_co == day_thr:
@@ -172,7 +194,7 @@ class QShamsiCalendarWidget(QWidget):
         year = self.years[self.year_combo.currentIndex()]
         month = self.month_combo.currentIndex() + 1
         current_selected_date = jdatetime.date(year, month, day_selected)
-        for i in range(5):
+        for i in range(6):
             for j in list(range(7)):
                 if self.weeks[i][j].dayText == day_selected:
                     self.weeks[i][j].selected = not self.weeks[i][j].selected
@@ -216,7 +238,19 @@ class QShamsiCalendarWidget(QWidget):
         self.fix_days()
     
     def enterEvent(self, event):
-        self.current_date = jdatetime.date.today()
+        if self.current_date != jdatetime.date.today():
+            self.current_date = jdatetime.date.today()
+            year = self.years[self.year_combo.currentIndex()]
+            month = self.month_combo.currentIndex() + 1
+            if self.current_date.year == year and self.current_date.month == month:
+                self.fix_days()
+
+
 
     def leaveEvent(self, event):
-        self.current_date = jdatetime.date.today()
+        if self.current_date != jdatetime.date.today():
+            self.current_date = jdatetime.date.today()
+            year = self.years[self.year_combo.currentIndex()]
+            month = self.month_combo.currentIndex() + 1
+            if self.current_date.year == year and self.current_date.month == month:
+                self.fix_days()
